@@ -4,245 +4,297 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meet's Email Verifier</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-1: #0a0a14;
-  --bg-2: #14142b;
-  --accent: #7c5cff;
-  --accent-2: #ff5cae;
-  --accent-3: #5cf0ff;
-  --text: #f4f4ff;
-  --muted: #8a8aa8;
-  --card: rgba(255,255,255,0.04);
-  --card-bord: rgba(255,255,255,0.08);
-  --good: #4ade80;
-  --bad: #f87171;
-  --warn: #fbbf24;
-  --info: #60a5fa;
+  --bg: #faf8f5;
+  --ink: #1f1d1a;
+  --ink-soft: #5c5853;
+  --muted: #9b9690;
+  --line: #ece8e1;
+  --card-bg: #fff;
+  --input-bg: #efece6;
+  --cloud: #efece6;
+
+  --peach: #ffe6d5;       --peach-ink: #b04a17;
+  --mint: #d6f0e0;        --mint-ink: #1f7a44;
+  --lavender: #e6dfff;    --lavender-ink: #5b3fc6;
+  --butter: #fff3c2;      --butter-ink: #8a6a08;
+  --rose: #ffd9e2;        --rose-ink: #b91c4a;
+  --sky: #d6ebff;         --sky-ink: #1a5cb0;
+
+  --shadow: 0 1px 0 rgba(0,0,0,0.02), 0 12px 40px -16px rgba(31,29,26,0.08);
+  --bg-image: none;
 }
 
-html, body { min-height: 100vh; }
+html[data-theme="dark"] {
+  --bg: #0d0f23;
+  --ink: #f0ecff;
+  --ink-soft: #b0acd0;
+  --muted: #6e6a90;
+  --line: #232548;
+  --card-bg: #161a3a;
+  --input-bg: #1d2148;
+  --cloud: #1d2148;
+
+  --peach: #4a2b1a;       --peach-ink: #ffb088;
+  --mint: #16402a;        --mint-ink: #5fe3a3;
+  --lavender: #2c2156;    --lavender-ink: #b9a7ff;
+  --butter: #4a3a0a;      --butter-ink: #ffd966;
+  --rose: #4a1a2a;        --rose-ink: #ff8aae;
+  --sky: #1a2c4a;         --sky-ink: #7cb6ff;
+
+  --shadow: 0 1px 0 rgba(255,255,255,0.04), 0 24px 60px -20px rgba(0,0,0,0.6);
+  --bg-image:
+    radial-gradient(1px 1px at 12% 18%, #e6dfff 99%, transparent),
+    radial-gradient(1px 1px at 28% 62%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 47% 12%, #b9a7ff 99%, transparent),
+    radial-gradient(1.5px 1.5px at 65% 38%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 78% 78%, #ffd966 99%, transparent),
+    radial-gradient(1px 1px at 88% 22%, #fff 99%, transparent),
+    radial-gradient(1.5px 1.5px at 8% 88%, #7cb6ff 99%, transparent),
+    radial-gradient(1px 1px at 35% 92%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 92% 55%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 55% 70%, #b9a7ff 99%, transparent),
+    radial-gradient(1px 1px at 18% 45%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 72% 8%, #fff 99%, transparent),
+    radial-gradient(800px 500px at 15% 0%, rgba(91,63,198,0.18), transparent 70%),
+    radial-gradient(700px 500px at 90% 100%, rgba(26,92,176,0.18), transparent 70%);
+}
+
 body {
-  font-family: 'Space Grotesk', sans-serif;
-  color: var(--text);
-  background: var(--bg-1);
-  background-image:
-    radial-gradient(900px 500px at 15% -5%, rgba(124,92,255,0.35), transparent 60%),
-    radial-gradient(700px 500px at 95% 10%, rgba(255,92,174,0.22), transparent 60%),
-    radial-gradient(600px 400px at 50% 100%, rgba(92,240,255,0.18), transparent 60%);
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  background-image: var(--bg-image);
   background-attachment: fixed;
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 64px 20px 100px;
   display: flex; flex-direction: column; align-items: center;
-  padding: 56px 20px 80px;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* floating orbs */
-body::before, body::after {
-  content: ''; position: fixed; border-radius: 50%;
-  filter: blur(80px); opacity: 0.5; pointer-events: none; z-index: 0;
-  animation: float 14s ease-in-out infinite;
-}
-body::before { width: 380px; height: 380px; background: var(--accent); top: 10%; left: -120px; }
-body::after { width: 320px; height: 320px; background: var(--accent-2); bottom: 5%; right: -100px; animation-delay: -7s; }
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-40px); } }
-
-.top { width: 100%; max-width: 620px; margin-bottom: 32px; position: relative; z-index: 1; }
-.brand {
+.top { width: 100%; max-width: 680px; margin-bottom: 32px; }
+.eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 500;
-  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
-  padding: 6px 12px; border: 1px solid var(--card-bord); border-radius: 99px;
-  background: rgba(255,255,255,0.03); margin-bottom: 18px;
+  font-size: 0.78rem; font-weight: 500; color: var(--ink-soft);
+  background: var(--card-bg); border: 1px solid var(--line);
+  padding: 6px 12px; border-radius: 99px; margin-bottom: 18px;
 }
-.brand .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 12px var(--good); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 h1 {
-  font-size: 3rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
-  background: linear-gradient(135deg, #fff 0%, #fff 40%, var(--accent) 70%, var(--accent-2) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 2.6rem; font-weight: 700; letter-spacing: -0.025em;
+  line-height: 1.1; color: var(--ink);
 }
-.tagline { color: var(--muted); font-size: 1rem; margin-top: 10px; max-width: 480px; }
+h1 .accent { background: var(--butter); color: var(--butter-ink); padding: 0 8px; border-radius: 8px; }
+.tagline { color: var(--ink-soft); font-size: 1.05rem; margin-top: 12px; max-width: 520px; line-height: 1.5; }
 
+.pill-row { display: flex; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 .credits-pill {
-  display: inline-flex; align-items: center; gap: 8px; margin-top: 18px;
-  font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
-  color: var(--muted); background: rgba(124,92,255,0.12); border: 1px solid rgba(124,92,255,0.3);
-  padding: 6px 14px; border-radius: 99px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; color: var(--mint-ink);
+  background: var(--mint); padding: 8px 16px; border-radius: 99px;
 }
-.credits-pill::before { content: '⚡'; }
-.credits-pill span { color: var(--text); font-weight: 600; }
+.credits-pill span { font-weight: 600; }
+
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; font-weight: 500; color: var(--lavender-ink);
+  background: var(--lavender); padding: 8px 14px; border-radius: 99px;
+  border: none; cursor: pointer; font-family: inherit;
+  transition: transform 0.15s;
+}
+.theme-toggle:hover { transform: translateY(-1px); }
+.theme-toggle .icon { font-size: 1rem; }
 
 .card {
-  width: 100%; max-width: 620px; position: relative; z-index: 1;
-  background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--card-bord); border-radius: 20px; overflow: hidden;
-  box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02) inset;
+  width: 100%; max-width: 680px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
-.tabs { display: flex; padding: 6px; background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--card-bord); }
+.tabs { display: flex; gap: 6px; padding: 14px; background: var(--cloud); border-bottom: 1px solid var(--line); }
 .tab {
-  flex: 1; padding: 12px; font-size: 0.78rem; font-weight: 600;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
-  background: none; border: none; border-radius: 12px; cursor: pointer;
-  transition: all 0.2s; font-family: inherit;
+  flex: 1; padding: 12px; font-size: 0.92rem; font-weight: 600;
+  color: var(--ink-soft); background: transparent;
+  border: none; border-radius: 14px; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
 }
-.tab.active { color: var(--text); background: linear-gradient(135deg, rgba(124,92,255,0.25), rgba(255,92,174,0.15)); box-shadow: 0 4px 16px -4px rgba(124,92,255,0.4); }
-.tab:not(.active):hover { color: var(--text); }
+.tab.active { color: var(--ink); background: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.tab:not(.active):hover { color: var(--ink); }
 
 .pad { padding: 28px; }
 .row { display: flex; gap: 12px; }
 
 input[type=text], textarea {
-  font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text);
-  background: rgba(0,0,0,0.3); border: 1px solid var(--card-bord); border-radius: 12px;
-  padding: 14px 16px; outline: none; transition: all 0.2s; width: 100%;
+  font-family: inherit; font-size: 0.98rem; color: var(--ink);
+  background: var(--input-bg); border: 2px solid transparent; border-radius: 14px;
+  padding: 14px 18px; outline: none; transition: all 0.15s; width: 100%;
 }
-input[type=text]:focus, textarea:focus {
-  border-color: var(--accent); background: rgba(0,0,0,0.5);
-  box-shadow: 0 0 0 4px rgba(124,92,255,0.15);
+input[type=text]:focus, textarea:focus { border-color: var(--lavender-ink); }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+textarea { resize: none; height: 150px; line-height: 1.6; }
+
+.suggest {
+  margin-top: 12px; padding: 12px 16px;
+  background: var(--butter); color: var(--butter-ink);
+  border-radius: 12px; font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  animation: pop 0.25s ease;
 }
-input::placeholder, textarea::placeholder { color: rgba(138,138,168,0.6); }
-textarea { resize: none; height: 140px; line-height: 1.7; }
+.suggest .msg { flex: 1; }
+.suggest .msg b { font-weight: 600; }
+.suggest button {
+  background: var(--butter-ink); color: var(--butter);
+  border: none; border-radius: 8px; padding: 6px 12px;
+  font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.suggest button:hover { opacity: 0.85; }
+.suggest .dismiss {
+  background: transparent; color: var(--butter-ink);
+  padding: 4px 8px; opacity: 0.7;
+}
+.suggest .dismiss:hover { opacity: 1; }
 
 .btn {
-  padding: 0 26px; height: 48px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff; border: none; border-radius: 12px;
-  font-family: inherit; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
+  padding: 0 26px; height: 50px;
+  background: var(--ink); color: var(--bg);
+  border: none; border-radius: 14px;
+  font-family: inherit; font-size: 0.95rem; font-weight: 600;
   cursor: pointer; white-space: nowrap;
-  transition: all 0.2s; flex-shrink: 0;
-  box-shadow: 0 8px 24px -6px rgba(124,92,255,0.5);
+  transition: all 0.15s; flex-shrink: 0;
 }
-.btn:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -6px rgba(124,92,255,0.65); }
+.btn:hover { transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.btn-full { width: 100%; margin-top: 14px; height: 48px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-full { width: 100%; margin-top: 14px; height: 50px; }
 
-.result { border-top: 1px solid var(--card-bord); animation: slideIn 0.3s ease; }
-@keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.result { border-top: 1px solid var(--line); animation: pop 0.25s ease; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 .result-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 28px; border-bottom: 1px solid var(--card-bord);
-  background: rgba(0,0,0,0.2);
+  padding: 22px 28px; gap: 12px; flex-wrap: wrap;
 }
-.result-email { font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; color: var(--text); font-weight: 500; }
+.result-email { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--ink); font-weight: 500; }
 
 .badge {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 6px 14px; border-radius: 99px; border: 1px solid transparent;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 6px 14px; border-radius: 99px;
 }
-.badge.valid    { background: rgba(74,222,128,0.15); color: var(--good); border-color: rgba(74,222,128,0.3); }
-.badge.invalid  { background: rgba(248,113,113,0.15); color: var(--bad); border-color: rgba(248,113,113,0.3); }
-.badge.catch_all{ background: rgba(96,165,250,0.15); color: var(--info); border-color: rgba(96,165,250,0.3); }
-.badge.risky    { background: rgba(251,191,36,0.15); color: var(--warn); border-color: rgba(251,191,36,0.3); }
-.badge.unknown  { background: rgba(138,138,168,0.15); color: var(--muted); border-color: rgba(138,138,168,0.3); }
+.badge.valid    { background: var(--mint);     color: var(--mint-ink); }
+.badge.invalid  { background: var(--rose);     color: var(--rose-ink); }
+.badge.catch_all{ background: var(--sky);      color: var(--sky-ink); }
+.badge.risky    { background: var(--butter);   color: var(--butter-ink); }
+.badge.unknown  { background: var(--cloud);    color: var(--ink-soft); }
 
-.diag { padding: 14px 28px 0; font-size: 0.85rem; color: var(--muted); font-style: italic; }
+.diag { padding: 0 28px 8px; font-size: 0.92rem; color: var(--ink-soft); }
 
-.checks { padding: 16px 28px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.checks { padding: 8px 28px 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .check-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 14px; background: rgba(0,0,0,0.25);
-  border: 1px solid var(--card-bord); border-radius: 10px; font-size: 0.8rem;
+  padding: 14px 16px; background: var(--cloud);
+  border-radius: 14px; font-size: 0.9rem;
 }
-.check-row .lbl { color: var(--muted); }
-.check-row .val { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; }
-.val.good { color: var(--good); }
-.val.bad  { color: var(--bad); }
-.val.mute { color: var(--muted); }
+.check-row .lbl { color: var(--ink-soft); font-weight: 500; }
+.check-row .val { font-size: 0.85rem; font-weight: 600; padding: 3px 10px; border-radius: 8px; }
+.val.good { background: var(--mint); color: var(--mint-ink); }
+.val.bad  { background: var(--rose); color: var(--rose-ink); }
+.val.mute { background: var(--card-bg); color: var(--ink-soft); }
 
-.prog-wrap { height: 6px; background: rgba(0,0,0,0.4); border-radius: 99px; overflow: hidden; margin: 14px 0 6px; }
-.prog-fill {
-  height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
-  background-size: 200% 100%; animation: shimmer 2s linear infinite;
-  transition: width 0.3s ease; width: 0%;
-}
-@keyframes shimmer { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
-.prog-label { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: right; }
+.prog-wrap { height: 10px; background: var(--cloud); border-radius: 99px; overflow: hidden; margin: 16px 0 8px; }
+.prog-fill { height: 100%; background: var(--lavender-ink); border-radius: 99px; transition: width 0.3s ease; width: 0%; }
+.prog-label { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--ink-soft); text-align: right; }
 
-.summary { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--card-bord); }
-.sum-cell { padding: 22px 0; text-align: center; border-right: 1px solid var(--card-bord); transition: background 0.2s; }
-.sum-cell:last-child { border-right: none; }
-.sum-cell:hover { background: rgba(255,255,255,0.02); }
-.sum-n { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 6px; font-family: 'Space Grotesk', sans-serif; }
-.sum-n.valid    { color: var(--good); }
-.sum-n.invalid  { color: var(--bad); }
-.sum-n.risky    { color: var(--warn); }
-.sum-n.catchall { color: var(--info); }
-.sum-lbl { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 24px; border-top: 1px solid var(--line); background: var(--cloud); }
+.sum-cell { padding: 22px 20px; border-radius: 18px; display: flex; flex-direction: column; gap: 6px; }
+.sum-cell.valid    { background: var(--mint); }
+.sum-cell.invalid  { background: var(--rose); }
+.sum-cell.risky    { background: var(--butter); }
+.sum-cell.catchall { background: var(--sky); }
+.sum-n { font-size: 2.4rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+.sum-cell.valid    .sum-n, .sum-cell.valid    .sum-lbl { color: var(--mint-ink); }
+.sum-cell.invalid  .sum-n, .sum-cell.invalid  .sum-lbl { color: var(--rose-ink); }
+.sum-cell.risky    .sum-n, .sum-cell.risky    .sum-lbl { color: var(--butter-ink); }
+.sum-cell.catchall .sum-n, .sum-cell.catchall .sum-lbl { color: var(--sky-ink); }
+.sum-lbl { font-size: 0.82rem; font-weight: 500; }
 
-.tbl-wrap { border-top: 1px solid var(--card-bord); max-height: 340px; overflow-y: auto; }
+.tbl-wrap { max-height: 360px; overflow-y: auto; padding: 0 24px 24px; }
 .tbl-wrap::-webkit-scrollbar { width: 8px; }
-.tbl-wrap::-webkit-scrollbar-track { background: transparent; }
-.tbl-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.tbl-wrap::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
 
-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+table { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 0.88rem; }
 thead th {
-  position: sticky; top: 0; background: rgba(10,10,20,0.95); backdrop-filter: blur(8px);
-  padding: 11px 18px; text-align: left;
-  font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500;
-  border-bottom: 1px solid var(--card-bord);
+  padding: 10px 16px; text-align: left;
+  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600;
 }
-tbody td { padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: 'JetBrains Mono', monospace; color: var(--text); }
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: rgba(255,255,255,0.03); }
+tbody tr td {
+  padding: 14px 16px; background: var(--cloud); color: var(--ink);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+}
+tbody tr td:first-child { border-radius: 12px 0 0 12px; }
+tbody tr td:last-child { border-radius: 0 12px 12px 0; }
+tbody tr.fixed td { background: var(--butter); color: var(--butter-ink); }
+.fix-tag { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--butter-ink); color: var(--butter); margin-left: 6px; }
 
-.export-row { padding: 18px 28px; display: flex; gap: 10px; border-top: 1px solid var(--card-bord); flex-wrap: wrap; }
+.export-row { padding: 20px 28px 28px; display: flex; gap: 10px; flex-wrap: wrap; }
 .exp-btn {
-  padding: 9px 16px; font-size: 0.78rem; font-weight: 600; font-family: inherit;
-  background: rgba(255,255,255,0.06); color: var(--text);
-  border: 1px solid var(--card-bord); border-radius: 10px; cursor: pointer; transition: all 0.2s;
+  padding: 10px 18px; font-size: 0.88rem; font-weight: 600; font-family: inherit;
+  background: var(--cloud); color: var(--ink);
+  border: none; border-radius: 12px; cursor: pointer; transition: all 0.15s;
 }
-.exp-btn:hover { background: rgba(124,92,255,0.2); border-color: var(--accent); }
+.exp-btn:hover { background: var(--lavender); color: var(--lavender-ink); }
 
 .err {
-  margin: 14px 0 0; padding: 12px 16px;
-  background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px;
-  font-size: 0.82rem; color: var(--bad); font-family: 'JetBrains Mono', monospace;
+  margin: 14px 0 0; padding: 14px 18px;
+  background: var(--rose); border-radius: 14px;
+  font-size: 0.9rem; color: var(--rose-ink); font-weight: 500;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin {
-  display: inline-block; width: 13px; height: 13px;
-  border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--bg);
   border-radius: 50%; animation: spin 0.6s linear infinite;
-  vertical-align: middle; margin-right: 7px;
+  vertical-align: middle; margin-right: 8px;
 }
 
-.footer-note {
-  margin-top: 24px; font-size: 0.72rem; color: var(--muted);
-  font-family: 'JetBrains Mono', monospace; text-align: center;
-  position: relative; z-index: 1;
-}
+.footer-note { margin-top: 28px; font-size: 0.82rem; color: var(--muted); text-align: center; }
 
 @media (max-width: 600px) {
-  h1 { font-size: 2.2rem; }
+  h1 { font-size: 2rem; }
   .checks { grid-template-columns: 1fr; }
-  .pad { padding: 20px; }
+  .pad { padding: 22px; }
 }
 </style>
 </head>
 <body>
 
 <div class="top">
-  <div class="brand"><span class="dot"></span> Email Verifier · Live</div>
-  <h1>Verify. Send. Close.</h1>
-  <div class="tagline">Check deliverability before you hit send. Catch invalids, dodge spamtraps, protect your sender reputation.</div>
-  <div class="credits-pill">Credits left today: <span id="credNum">—</span></div>
+  <div class="eyebrow">📬 Email Verifier</div>
+  <h1>Verify. Send. <span class="accent">Close.</span></h1>
+  <div class="tagline">Check deliverability before you hit send. Catch invalids, dodge spamtraps, protect your sender score.</div>
+  <div class="pill-row">
+    <div class="credits-pill">⚡ Credits left today: <span id="credNum">—</span></div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">
+      <span class="icon" id="themeIcon">🌙</span><span id="themeLabel">Dark</span>
+    </button>
+  </div>
 </div>
 
 <div class="card">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('single')">Single</button>
-    <button class="tab" onclick="switchTab('bulk')">Bulk</button>
+    <button class="tab active" onclick="switchTab('single')">✨ Single</button>
+    <button class="tab" onclick="switchTab('bulk')">📋 Bulk</button>
   </div>
 
   <div id="singlePanel" class="pad">
@@ -250,12 +302,14 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
       <input type="text" id="singleInput" placeholder="name@company.com" onkeydown="if(event.key==='Enter') runSingle()">
       <button class="btn" id="singleBtn" onclick="runSingle()">Check</button>
     </div>
+    <div id="singleSuggest"></div>
     <div id="singleErr"></div>
   </div>
   <div id="singleResult"></div>
 
   <div id="bulkPanel" class="pad" style="display:none">
     <textarea id="bulkInput" placeholder="Paste emails — one per line or comma separated"></textarea>
+    <div id="bulkSuggest"></div>
     <div id="bulkProgress" style="display:none">
       <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
       <div class="prog-label" id="progLabel"></div>
@@ -269,8 +323,99 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 <div class="footer-note">Powered by MyEmailVerifier · Built for Meet</div>
 
 <script>
-const API = (email, type='single') =>
-  `/api/verify?email=${encodeURIComponent(email)}&type=${type}`;
+/* ---------- Theme ---------- */
+(function initTheme() {
+  const stored = localStorage.getItem('theme');
+  const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const t = stored || sys;
+  document.documentElement.setAttribute('data-theme', t);
+  // Listen for system change only if user hasn't overridden
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+      paintThemeBtn();
+    }
+  });
+})();
+function paintThemeBtn() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.getElementById('themeIcon').textContent = dark ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  paintThemeBtn();
+}
+paintThemeBtn();
+
+/* ---------- Typo suggestions ---------- */
+const COMMON_DOMAINS = [
+  'gmail.com','googlemail.com','yahoo.com','yahoo.co.uk','yahoo.co.in','hotmail.com','hotmail.co.uk',
+  'outlook.com','outlook.in','live.com','msn.com','icloud.com','me.com','mac.com',
+  'proton.me','protonmail.com','aol.com','gmx.com','gmx.net','yandex.com','yandex.ru',
+  'zoho.com','fastmail.com','mail.com','mail.ru','tutanota.com'
+];
+const COMMON_TLDS = ['com','net','org','co','io','edu','gov','co.uk','co.in','ai','app','dev','me'];
+const TLD_TYPOS = { 'con':'com','vom':'com','xom':'com','cmo':'com','vcom':'com','comm':'com','cm':'com','om':'com',
+  'net.':'net','nett':'net','ner':'net','orgg':'org','rog':'org','ogr':'org' };
+
+function lev(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = Array.from({length:m+1}, (_,i)=>[i]);
+  for (let j=1;j<=n;j++) dp[0][j]=j;
+  for (let i=1;i<=m;i++) for (let j=1;j<=n;j++) {
+    dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1]
+      : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  }
+  return dp[m][n];
+}
+
+function suggest(email) {
+  if (!email || !email.includes('@')) return null;
+  const [local, domain] = email.toLowerCase().split('@');
+  if (!domain) return null;
+
+  // Exact common domain — no suggestion
+  if (COMMON_DOMAINS.includes(domain)) return null;
+
+  // Try TLD typo fix first
+  const parts = domain.split('.');
+  if (parts.length >= 2) {
+    const tld = parts.slice(1).join('.');
+    if (TLD_TYPOS[tld]) {
+      const fixed = parts[0] + '.' + TLD_TYPOS[tld];
+      return `${local}@${fixed}`;
+    }
+    // Fuzzy TLD against common list
+    let bestTld = null, bestTldD = 99;
+    for (const t of COMMON_TLDS) {
+      const d = lev(tld, t);
+      if (d > 0 && d <= 1 && d < bestTldD) { bestTld = t; bestTldD = d; }
+    }
+    if (bestTld) {
+      const fixed = parts[0] + '.' + bestTld;
+      // If after fixing TLD it matches a common domain, prefer that
+      return `${local}@${fixed}`;
+    }
+  }
+
+  // Fuzzy whole-domain match against common providers
+  let best = null, bestD = 99;
+  for (const cd of COMMON_DOMAINS) {
+    const d = lev(domain, cd);
+    if (d > 0 && d <= 2 && d < bestD) { best = cd; bestD = d; }
+  }
+  if (best) return `${local}@${best}`;
+  return null;
+}
+
+/* ---------- API ---------- */
+const API = (email, type='single') => `/api/verify?email=${encodeURIComponent(email)}&type=${type}`;
 const CREDITS_API = () => `/api/verify?email=_&type=credits`;
 
 let bulkRows = [];
@@ -301,11 +446,9 @@ function norm(s) {
   if (['risky','unknown','spamtrap'].some(x => l.includes(x))) return 'risky';
   return 'unknown';
 }
-
 function label(s) {
   return { valid:'Valid ✓', invalid:'Invalid ✗', catch_all:'Catch-All', risky:'Risky ⚠', unknown:'Unknown' }[s] || s;
 }
-
 function bv(val, goodIfTrue) {
   const t = String(val).toLowerCase() === 'true';
   const l = t ? 'Yes' : 'No';
@@ -334,9 +477,31 @@ function renderSingle(d) {
     </div>`;
 }
 
+let pendingSingle = null;
+
 async function runSingle() {
-  const email = document.getElementById('singleInput').value.trim();
+  const inp = document.getElementById('singleInput');
+  const email = inp.value.trim().toLowerCase();
   if (!email) return;
+  const sg = document.getElementById('singleSuggest');
+
+  // If we haven't already prompted a suggestion for this exact value, check
+  if (pendingSingle !== email) {
+    const fix = suggest(email);
+    if (fix && fix !== email) {
+      pendingSingle = email;
+      sg.innerHTML = `
+        <div class="suggest">
+          <div class="msg">Did you mean <b>${fix}</b>?</div>
+          <button onclick="acceptSuggest('${fix.replace(/'/g, "\\'")}')">Use it</button>
+          <button class="dismiss" onclick="dismissSuggest()" title="Verify as typed">✕</button>
+        </div>`;
+      return;
+    }
+  }
+  sg.innerHTML = '';
+  pendingSingle = null;
+
   const btn = document.getElementById('singleBtn');
   document.getElementById('singleErr').innerHTML = '';
   document.getElementById('singleResult').innerHTML = '';
@@ -353,13 +518,60 @@ async function runSingle() {
   btn.textContent = 'Check';
 }
 
+function acceptSuggest(fix) {
+  document.getElementById('singleInput').value = fix;
+  document.getElementById('singleSuggest').innerHTML = '';
+  pendingSingle = null;
+  runSingle();
+}
+function dismissSuggest() {
+  document.getElementById('singleSuggest').innerHTML = '';
+  // Keep pendingSingle set so we don't re-prompt for the same value
+  runSingle();
+}
+
 function parseEmails(raw) {
   return [...new Set(raw.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e.includes('@')))];
 }
 
+let bulkFixMap = null; // original -> suggested
+let bulkPromptedFor = null;
+
 async function runBulk() {
-  const emails = parseEmails(document.getElementById('bulkInput').value).slice(0, 500);
+  const raw = document.getElementById('bulkInput').value;
+  let emails = parseEmails(raw).slice(0, 500);
   if (!emails.length) return;
+  const sg = document.getElementById('bulkSuggest');
+
+  // Compute suggestions
+  const fixes = {};
+  emails.forEach(e => { const f = suggest(e); if (f && f !== e) fixes[e] = f; });
+  const fixCount = Object.keys(fixes).length;
+
+  const sig = emails.join(',');
+  if (fixCount > 0 && bulkPromptedFor !== sig) {
+    bulkPromptedFor = sig;
+    bulkFixMap = fixes;
+    const sample = Object.entries(fixes).slice(0, 3)
+      .map(([o,f]) => `<b>${o}</b> → <b>${f}</b>`).join('<br>');
+    sg.innerHTML = `
+      <div class="suggest">
+        <div class="msg">Found ${fixCount} likely typo${fixCount>1?'s':''}:<br>${sample}${fixCount>3?`<br>+ ${fixCount-3} more`:''}</div>
+        <button onclick="acceptBulkFix()">Fix all & verify</button>
+        <button class="dismiss" onclick="skipBulkFix()" title="Verify as-is">✕</button>
+      </div>`;
+    return;
+  }
+
+  sg.innerHTML = '';
+  const fixApplied = bulkFixMap || {};
+  bulkFixMap = null;
+  bulkPromptedFor = null;
+
+  // Apply any accepted fixes
+  const finalEmails = emails.map(e => fixApplied[e] || e);
+  const fixedSet = new Set(Object.keys(fixApplied));
+
   const btn = document.getElementById('bulkBtn');
   const progWrap = document.getElementById('bulkProgress');
   const fill = document.getElementById('progFill');
@@ -371,17 +583,19 @@ async function runBulk() {
   bulkRows = [];
   const c = { valid:0, invalid:0, risky:0, catch_all:0 };
 
-  for (let i = 0; i < emails.length; i++) {
+  for (let i = 0; i < finalEmails.length; i++) {
+    const orig = emails[i];
+    const fe = finalEmails[i];
     try {
-      const d = await callAPI(emails[i]);
+      const d = await callAPI(fe);
       const s = norm(d.Status);
-      bulkRows.push({ email: emails[i], status: s, diagnosis: d.Diagnosis || '' });
+      bulkRows.push({ email: fe, status: s, diagnosis: d.Diagnosis || '', wasFixed: fixedSet.has(orig), originalEmail: orig });
       if (c[s] !== undefined) c[s]++; else c.risky++;
     } catch {
-      bulkRows.push({ email: emails[i], status: 'unknown', diagnosis: 'Error' });
+      bulkRows.push({ email: fe, status: 'unknown', diagnosis: 'Error', wasFixed: fixedSet.has(orig), originalEmail: orig });
     }
-    fill.style.width = `${Math.round((i+1)/emails.length*100)}%`;
-    lbl.textContent = `${i+1} / ${emails.length}`;
+    fill.style.width = `${Math.round((i+1)/finalEmails.length*100)}%`;
+    lbl.textContent = `${i+1} / ${finalEmails.length}`;
   }
 
   progWrap.style.display = 'none';
@@ -391,20 +605,30 @@ async function runBulk() {
   btn.textContent = 'Verify All';
 }
 
+function acceptBulkFix() {
+  document.getElementById('bulkSuggest').innerHTML = '';
+  runBulk();
+}
+function skipBulkFix() {
+  bulkFixMap = {};
+  document.getElementById('bulkSuggest').innerHTML = '';
+  runBulk();
+}
+
 function renderBulk(c) {
   const rows = bulkRows.map(r => `
-    <tr>
-      <td>${r.email}</td>
-      <td><span class="badge ${r.status}" style="font-size:0.65rem;padding:4px 10px">${label(r.status)}</span></td>
-      <td style="color:var(--muted)">${r.diagnosis}</td>
+    <tr class="${r.wasFixed ? 'fixed' : ''}">
+      <td>${r.email}${r.wasFixed ? `<span class="fix-tag">fixed</span>` : ''}</td>
+      <td><span class="badge ${r.status}">${label(r.status)}</span></td>
+      <td>${r.diagnosis}</td>
     </tr>`).join('');
 
   document.getElementById('bulkResult').innerHTML = `
     <div class="summary">
-      <div class="sum-cell"><div class="sum-n valid">${c.valid}</div><div class="sum-lbl">Valid</div></div>
-      <div class="sum-cell"><div class="sum-n invalid">${c.invalid}</div><div class="sum-lbl">Invalid</div></div>
-      <div class="sum-cell"><div class="sum-n risky">${c.risky}</div><div class="sum-lbl">Risky</div></div>
-      <div class="sum-cell"><div class="sum-n catchall">${c.catch_all}</div><div class="sum-lbl">Catch-All</div></div>
+      <div class="sum-cell valid"><div class="sum-n">${c.valid}</div><div class="sum-lbl">Valid</div></div>
+      <div class="sum-cell invalid"><div class="sum-n">${c.invalid}</div><div class="sum-lbl">Invalid</div></div>
+      <div class="sum-cell risky"><div class="sum-n">${c.risky}</div><div class="sum-lbl">Risky</div></div>
+      <div class="sum-cell catchall"><div class="sum-n">${c.catch_all}</div><div class="sum-lbl">Catch-All</div></div>
     </div>
     <div class="tbl-wrap">
       <table>
@@ -437,6 +661,16 @@ function switchTab(t) {
   document.getElementById('bulkPanel').style.display = t==='bulk' ? '' : 'none';
   document.getElementById('bulkResult').style.display = t==='bulk' ? '' : 'none';
 }
+
+// Clear suggestion if user edits the input
+document.getElementById('singleInput').addEventListener('input', () => {
+  document.getElementById('singleSuggest').innerHTML = '';
+  pendingSingle = null;
+});
+document.getElementById('bulkInput').addEventListener('input', () => {
+  document.getElementById('bulkSuggest').innerHTML = '';
+  bulkFixMap = null; bulkPromptedFor = null;
+});
 </script>
 </body>
 </html>
