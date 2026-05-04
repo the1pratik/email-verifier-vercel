@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meet's Email Verifier</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-1: #0a0a14;
+  --bg-2: #14142b;
+  --accent: #7c5cff;
+  --accent-2: #ff5cae;
+  --accent-3: #5cf0ff;
+  --text: #f4f4ff;
+  --muted: #8a8aa8;
+  --card: rgba(255,255,255,0.04);
+  --card-bord: rgba(255,255,255,0.08);
+  --good: #4ade80;
+  --bad: #f87171;
+  --warn: #fbbf24;
+  --info: #60a5fa;
+}
+
+html, body { min-height: 100vh; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text);
+  background: var(--bg-1);
+  background-image:
+    radial-gradient(900px 500px at 15% -5%, rgba(124,92,255,0.35), transparent 60%),
+    radial-gradient(700px 500px at 95% 10%, rgba(255,92,174,0.22), transparent 60%),
+    radial-gradient(600px 400px at 50% 100%, rgba(92,240,255,0.18), transparent 60%);
+  background-attachment: fixed;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 56px 20px 80px;
+  overflow-x: hidden;
+}
+
+/* floating orbs */
+body::before, body::after {
+  content: ''; position: fixed; border-radius: 50%;
+  filter: blur(80px); opacity: 0.5; pointer-events: none; z-index: 0;
+  animation: float 14s ease-in-out infinite;
+}
+body::before { width: 380px; height: 380px; background: var(--accent); top: 10%; left: -120px; }
+body::after { width: 320px; height: 320px; background: var(--accent-2); bottom: 5%; right: -100px; animation-delay: -7s; }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-40px); } }
+
+.top { width: 100%; max-width: 620px; margin-bottom: 32px; position: relative; z-index: 1; }
+.brand {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+  padding: 6px 12px; border: 1px solid var(--card-bord); border-radius: 99px;
+  background: rgba(255,255,255,0.03); margin-bottom: 18px;
+}
+.brand .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 12px var(--good); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+h1 {
+  font-size: 3rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
+  background: linear-gradient(135deg, #fff 0%, #fff 40%, var(--accent) 70%, var(--accent-2) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tagline { color: var(--muted); font-size: 1rem; margin-top: 10px; max-width: 480px; }
+
+.credits-pill {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 18px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+  color: var(--muted); background: rgba(124,92,255,0.12); border: 1px solid rgba(124,92,255,0.3);
+  padding: 6px 14px; border-radius: 99px;
+}
+.credits-pill::before { content: '⚡'; }
+.credits-pill span { color: var(--text); font-weight: 600; }
+
+.card {
+  width: 100%; max-width: 620px; position: relative; z-index: 1;
+  background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--card-bord); border-radius: 20px; overflow: hidden;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02) inset;
+}
+
+.tabs { display: flex; padding: 6px; background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--card-bord); }
+.tab {
+  flex: 1; padding: 12px; font-size: 0.78rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+  background: none; border: none; border-radius: 12px; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.tab.active { color: var(--text); background: linear-gradient(135deg, rgba(124,92,255,0.25), rgba(255,92,174,0.15)); box-shadow: 0 4px 16px -4px rgba(124,92,255,0.4); }
+.tab:not(.active):hover { color: var(--text); }
+
+.pad { padding: 28px; }
+.row { display: flex; gap: 12px; }
+
+input[type=text], textarea {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text);
+  background: rgba(0,0,0,0.3); border: 1px solid var(--card-bord); border-radius: 12px;
+  padding: 14px 16px; outline: none; transition: all 0.2s; width: 100%;
+}
+input[type=text]:focus, textarea:focus {
+  border-color: var(--accent); background: rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 4px rgba(124,92,255,0.15);
+}
+input::placeholder, textarea::placeholder { color: rgba(138,138,168,0.6); }
+textarea { resize: none; height: 140px; line-height: 1.7; }
+
+.btn {
+  padding: 0 26px; height: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff; border: none; border-radius: 12px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
+  cursor: pointer; white-space: nowrap;
+  transition: all 0.2s; flex-shrink: 0;
+  box-shadow: 0 8px 24px -6px rgba(124,92,255,0.5);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -6px rgba(124,92,255,0.65); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-full { width: 100%; margin-top: 14px; height: 48px; }
+
+.result { border-top: 1px solid var(--card-bord); animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.result-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 28px; border-bottom: 1px solid var(--card-bord);
+  background: rgba(0,0,0,0.2);
+}
+.result-email { font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; color: var(--text); font-weight: 500; }
+
+.badge {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 6px 14px; border-radius: 99px; border: 1px solid transparent;
+}
+.badge.valid    { background: rgba(74,222,128,0.15); color: var(--good); border-color: rgba(74,222,128,0.3); }
+.badge.invalid  { background: rgba(248,113,113,0.15); color: var(--bad); border-color: rgba(248,113,113,0.3); }
+.badge.catch_all{ background: rgba(96,165,250,0.15); color: var(--info); border-color: rgba(96,165,250,0.3); }
+.badge.risky    { background: rgba(251,191,36,0.15); color: var(--warn); border-color: rgba(251,191,36,0.3); }
+.badge.unknown  { background: rgba(138,138,168,0.15); color: var(--muted); border-color: rgba(138,138,168,0.3); }
+
+.diag { padding: 14px 28px 0; font-size: 0.85rem; color: var(--muted); font-style: italic; }
+
+.checks { padding: 16px 28px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.check-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; background: rgba(0,0,0,0.25);
+  border: 1px solid var(--card-bord); border-radius: 10px; font-size: 0.8rem;
+}
+.check-row .lbl { color: var(--muted); }
+.check-row .val { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; }
+.val.good { color: var(--good); }
+.val.bad  { color: var(--bad); }
+.val.mute { color: var(--muted); }
+
+.prog-wrap { height: 6px; background: rgba(0,0,0,0.4); border-radius: 99px; overflow: hidden; margin: 14px 0 6px; }
+.prog-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  background-size: 200% 100%; animation: shimmer 2s linear infinite;
+  transition: width 0.3s ease; width: 0%;
+}
+@keyframes shimmer { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+.prog-label { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: right; }
+
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--card-bord); }
+.sum-cell { padding: 22px 0; text-align: center; border-right: 1px solid var(--card-bord); transition: background 0.2s; }
+.sum-cell:last-child { border-right: none; }
+.sum-cell:hover { background: rgba(255,255,255,0.02); }
+.sum-n { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 6px; font-family: 'Space Grotesk', sans-serif; }
+.sum-n.valid    { color: var(--good); }
+.sum-n.invalid  { color: var(--bad); }
+.sum-n.risky    { color: var(--warn); }
+.sum-n.catchall { color: var(--info); }
+.sum-lbl { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+.tbl-wrap { border-top: 1px solid var(--card-bord); max-height: 340px; overflow-y: auto; }
+.tbl-wrap::-webkit-scrollbar { width: 8px; }
+.tbl-wrap::-webkit-scrollbar-track { background: transparent; }
+.tbl-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+thead th {
+  position: sticky; top: 0; background: rgba(10,10,20,0.95); backdrop-filter: blur(8px);
+  padding: 11px 18px; text-align: left;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500;
+  border-bottom: 1px solid var(--card-bord);
+}
+tbody td { padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: 'JetBrains Mono', monospace; color: var(--text); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: rgba(255,255,255,0.03); }
+
+.export-row { padding: 18px 28px; display: flex; gap: 10px; border-top: 1px solid var(--card-bord); flex-wrap: wrap; }
+.exp-btn {
+  padding: 9px 16px; font-size: 0.78rem; font-weight: 600; font-family: inherit;
+  background: rgba(255,255,255,0.06); color: var(--text);
+  border: 1px solid var(--card-bord); border-radius: 10px; cursor: pointer; transition: all 0.2s;
+}
+.exp-btn:hover { background: rgba(124,92,255,0.2); border-color: var(--accent); }
+
+.err {
+  margin: 14px 0 0; padding: 12px 16px;
+  background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px;
+  font-size: 0.82rem; color: var(--bad); font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+  vertical-align: middle; margin-right: 7px;
+}
+
+.footer-note {
+  margin-top: 24px; font-size: 0.72rem; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; text-align: center;
+  position: relative; z-index: 1;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 2.2rem; }
+  .checks { grid-template-columns: 1fr; }
+  .pad { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand"><span class="dot"></span> Email Verifier · Live</div>
+  <h1>Verify. Send. Close.</h1>
+  <div class="tagline">Check deliverability before you hit send. Catch invalids, dodge spamtraps, protect your sender reputation.</div>
+  <div class="credits-pill">Credits left today: <span id="credNum">—</span></div>
+</div>
+
+<div class="card">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('single')">Single</button>
+    <button class="tab" onclick="switchTab('bulk')">Bulk</button>
+  </div>
+
+  <div id="singlePanel" class="pad">
+    <div class="row">
+      <input type="text" id="singleInput" placeholder="name@company.com" onkeydown="if(event.key==='Enter') runSingle()">
+      <button class="btn" id="singleBtn" onclick="runSingle()">Check</button>
+    </div>
+    <div id="singleErr"></div>
+  </div>
+  <div id="singleResult"></div>
+
+  <div id="bulkPanel" class="pad" style="display:none">
+    <textarea id="bulkInput" placeholder="Paste emails — one per line or comma separated"></textarea>
+    <div id="bulkProgress" style="display:none">
+      <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-label" id="progLabel"></div>
+    </div>
+    <div id="bulkErr"></div>
+    <button class="btn btn-full" id="bulkBtn" onclick="runBulk()">Verify All</button>
+  </div>
+  <div id="bulkResult"></div>
+</div>
+
+<div class="footer-note">Powered by MyEmailVerifier · Built for Meet</div>
+
+<script>
+const API = (email, type='single') =>
+  `/api/verify?email=${encodeURIComponent(email)}&type=${type}`;
+const CREDITS_API = () => `/api/verify?email=_&type=credits`;
+
+let bulkRows = [];
+
+fetchCredits();
+
+async function fetchCredits() {
+  try {
+    const r = await fetch(CREDITS_API());
+    const t = await r.text();
+    const n = parseFloat(t);
+    document.getElementById('credNum').textContent = isNaN(n) ? '?' : n.toLocaleString();
+  } catch { document.getElementById('credNum').textContent = '?'; }
+}
+
+async function callAPI(email) {
+  const r = await fetch(API(email));
+  if (!r.ok) throw new Error(`API error ${r.status}`);
+  return r.json();
+}
+
+function norm(s) {
+  if (!s) return 'unknown';
+  const l = s.toLowerCase().replace(/[\s-]/g,'_');
+  if (l === 'valid') return 'valid';
+  if (l === 'invalid') return 'invalid';
+  if (l.includes('catch')) return 'catch_all';
+  if (['risky','unknown','spamtrap'].some(x => l.includes(x))) return 'risky';
+  return 'unknown';
+}
+
+function label(s) {
+  return { valid:'Valid ✓', invalid:'Invalid ✗', catch_all:'Catch-All', risky:'Risky ⚠', unknown:'Unknown' }[s] || s;
+}
+
+function bv(val, goodIfTrue) {
+  const t = String(val).toLowerCase() === 'true';
+  const l = t ? 'Yes' : 'No';
+  if (goodIfTrue === undefined) return `<span class="val mute">${l}</span>`;
+  const good = goodIfTrue ? t : !t;
+  return `<span class="val ${good ? 'good' : 'bad'}">${l}</span>`;
+}
+
+function renderSingle(d) {
+  const s = norm(d.Status);
+  return `
+    <div class="result">
+      <div class="result-head">
+        <div class="result-email">${d.Address || ''}</div>
+        <div class="badge ${s}">${label(s)}</div>
+      </div>
+      ${d.Diagnosis ? `<div class="diag">${d.Diagnosis}</div>` : ''}
+      <div class="checks">
+        <div class="check-row"><span class="lbl">Catch-All</span>${bv(d.catch_all, false)}</div>
+        <div class="check-row"><span class="lbl">Disposable</span>${bv(d.Disposable_Domain, false)}</div>
+        <div class="check-row"><span class="lbl">Role-Based</span>${bv(d.Role_Based, false)}</div>
+        <div class="check-row"><span class="lbl">Free Domain</span>${bv(d.Free_Domain)}</div>
+        <div class="check-row"><span class="lbl">Greylisted</span>${bv(d.Greylisted, false)}</div>
+        <div class="check-row"><span class="lbl">Raw Status</span><span class="val mute">${d.Status || '—'}</span></div>
+      </div>
+    </div>`;
+}
+
+async function runSingle() {
+  const email = document.getElementById('singleInput').value.trim();
+  if (!email) return;
+  const btn = document.getElementById('singleBtn');
+  document.getElementById('singleErr').innerHTML = '';
+  document.getElementById('singleResult').innerHTML = '';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Checking';
+  try {
+    const d = await callAPI(email);
+    document.getElementById('singleResult').innerHTML = renderSingle(d);
+    fetchCredits();
+  } catch(e) {
+    document.getElementById('singleErr').innerHTML = `<div class="err">${e.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Check';
+}
+
+function parseEmails(raw) {
+  return [...new Set(raw.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e.includes('@')))];
+}
+
+async function runBulk() {
+  const emails = parseEmails(document.getElementById('bulkInput').value).slice(0, 500);
+  if (!emails.length) return;
+  const btn = document.getElementById('bulkBtn');
+  const progWrap = document.getElementById('bulkProgress');
+  const fill = document.getElementById('progFill');
+  const lbl = document.getElementById('progLabel');
+  document.getElementById('bulkErr').innerHTML = '';
+  document.getElementById('bulkResult').innerHTML = '';
+  btn.disabled = true;
+  progWrap.style.display = 'block';
+  bulkRows = [];
+  const c = { valid:0, invalid:0, risky:0, catch_all:0 };
+
+  for (let i = 0; i < emails.length; i++) {
+    try {
+      const d = await callAPI(emails[i]);
+      const s = norm(d.Status);
+      bulkRows.push({ email: emails[i], status: s, diagnosis: d.Diagnosis || '' });
+      if (c[s] !== undefined) c[s]++; else c.risky++;
+    } catch {
+      bulkRows.push({ email: emails[i], status: 'unknown', diagnosis: 'Error' });
+    }
+    fill.style.width = `${Math.round((i+1)/emails.length*100)}%`;
+    lbl.textContent = `${i+1} / ${emails.length}`;
+  }
+
+  progWrap.style.display = 'none';
+  fetchCredits();
+  renderBulk(c);
+  btn.disabled = false;
+  btn.textContent = 'Verify All';
+}
+
+function renderBulk(c) {
+  const rows = bulkRows.map(r => `
+    <tr>
+      <td>${r.email}</td>
+      <td><span class="badge ${r.status}" style="font-size:0.65rem;padding:4px 10px">${label(r.status)}</span></td>
+      <td style="color:var(--muted)">${r.diagnosis}</td>
+    </tr>`).join('');
+
+  document.getElementById('bulkResult').innerHTML = `
+    <div class="summary">
+      <div class="sum-cell"><div class="sum-n valid">${c.valid}</div><div class="sum-lbl">Valid</div></div>
+      <div class="sum-cell"><div class="sum-n invalid">${c.invalid}</div><div class="sum-lbl">Invalid</div></div>
+      <div class="sum-cell"><div class="sum-n risky">${c.risky}</div><div class="sum-lbl">Risky</div></div>
+      <div class="sum-cell"><div class="sum-n catchall">${c.catch_all}</div><div class="sum-lbl">Catch-All</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Email</th><th>Status</th><th>Diagnosis</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="export-row">
+      <button class="exp-btn" onclick="doExport('all')">Export All</button>
+      <button class="exp-btn" onclick="doExport('valid')">Valid Only</button>
+      <button class="exp-btn" onclick="doExport('sendable')">Valid + Catch-All</button>
+    </div>`;
+}
+
+function doExport(f) {
+  let rows = bulkRows;
+  if (f === 'valid') rows = bulkRows.filter(r => r.status === 'valid');
+  if (f === 'sendable') rows = bulkRows.filter(r => r.status === 'valid' || r.status === 'catch_all');
+  const csv = ['email,status,diagnosis', ...rows.map(r => `${r.email},${r.status},"${r.diagnosis}"`)].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `emails_${f}.csv`;
+  a.click();
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', (i===0&&t==='single')||(i===1&&t==='bulk')));
+  document.getElementById('singlePanel').style.display = t==='single' ? '' : 'none';
+  document.getElementById('singleResult').style.display = t==='single' ? '' : 'none';
+  document.getElementById('bulkPanel').style.display = t==='bulk' ? '' : 'none';
+  document.getElementById('bulkResult').style.display = t==='bulk' ? '' : 'none';
+}
+</script>
+</body>
+</html>
