@@ -8,10 +8,10 @@ export default async function handler(req, res) {
 
   try {
     if (type === 'credits') {
-      const r = await fetch(`${BASE}/check_credits/${key}`);
-      const t = await r.text();
+      const r = await fetch(`${BASE}/getcredits/${key}`);
+      const j = await r.json();
       res.setHeader('Content-Type', 'text/plain');
-      return res.status(200).send(t.trim());
+      return res.status(200).send(String(j.credits ?? ''));
     }
 
     if (!email) return res.status(400).json({ error: 'email required' });
