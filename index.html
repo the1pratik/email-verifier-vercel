@@ -247,6 +247,52 @@ tbody tr td:last-child { border-radius: 0 12px 12px 0; }
 
 .footer-note { margin-top: 28px; font-size: 0.82rem; color: var(--muted); text-align: center; }
 
+.research-btn {
+  font-size: 0.78rem; font-weight: 600; font-family: inherit;
+  background: var(--lavender); color: var(--lavender-ink);
+  border: none; border-radius: 99px; padding: 6px 12px;
+  cursor: pointer; transition: all 0.15s;
+}
+.research-btn:hover { transform: translateY(-1px); }
+.research-btn.row { padding: 4px 10px; font-size: 0.72rem; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(13,15,35,0.55);
+  backdrop-filter: blur(6px); display: none;
+  align-items: center; justify-content: center; z-index: 100;
+  padding: 20px; animation: fadeIn 0.2s ease;
+}
+.modal-overlay.open { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--card-bg); border: 1px solid var(--line); border-radius: 24px;
+  width: 100%; max-width: 640px; max-height: 85vh; overflow-y: auto;
+  box-shadow: var(--shadow); animation: pop 0.25s ease;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 28px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: var(--card-bg); z-index: 1;
+}
+.modal-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+.modal-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--ink-soft); margin-top: 2px; }
+.modal-close {
+  background: var(--cloud); color: var(--ink); border: none; border-radius: 10px;
+  width: 36px; height: 36px; cursor: pointer; font-size: 1.1rem; font-family: inherit;
+}
+.modal-close:hover { background: var(--rose); color: var(--rose-ink); }
+.modal-body { padding: 24px 28px 28px; }
+.modal-section-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.modal-summary { background: var(--cloud); border-radius: 14px; padding: 18px; font-size: 0.95rem; line-height: 1.6; color: var(--ink); margin-bottom: 22px; white-space: pre-wrap; }
+.source { display: block; padding: 14px 16px; background: var(--cloud); border-radius: 12px; margin-bottom: 8px; text-decoration: none; color: var(--ink); transition: all 0.15s; }
+.source:hover { background: var(--lavender); }
+.source:hover .src-title { color: var(--lavender-ink); }
+.src-title { font-weight: 600; font-size: 0.92rem; color: var(--ink); margin-bottom: 4px; }
+.src-url { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--mint-ink); margin-bottom: 6px; word-break: break-all; }
+.src-snippet { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; }
+.modal-loading { padding: 40px; text-align: center; color: var(--ink-soft); }
+.modal-loading .spin { border-color: rgba(0,0,0,0.15); border-top-color: var(--lavender-ink); width: 24px; height: 24px; }
+
 @media (max-width: 600px) {
   h1 { font-size: 2rem; }
   .checks { grid-template-columns: 1fr; }
@@ -296,6 +342,19 @@ tbody tr td:last-child { border-radius: 0 12px 12px 0; }
 </div>
 
 <div class="footer-note">Powered by MyEmailVerifier · Built for Meet</div>
+
+<div class="modal-overlay" id="researchModal" onclick="if(event.target===this)closeResearch()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">🔍 Research</div>
+        <div class="modal-sub" id="researchEmail"></div>
+      </div>
+      <button class="modal-close" onclick="closeResearch()">✕</button>
+    </div>
+    <div class="modal-body" id="researchBody"></div>
+  </div>
+</div>
 
 <script>
 /* ---------- Theme ---------- */
@@ -375,7 +434,10 @@ function renderSingle(d) {
     <div class="result">
       <div class="result-head">
         <div class="result-email">${d.Address || ''}</div>
-        <div class="badge ${s}">${label(s)}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="research-btn" onclick="openResearch('${(d.Address||'').replace(/'/g,"\\'")}')">🔍 Research</button>
+          <div class="badge ${s}">${label(s)}</div>
+        </div>
       </div>
       ${d.Diagnosis ? `<div class="diag">${d.Diagnosis}</div>` : ''}
       <div class="checks">
@@ -452,6 +514,7 @@ function renderBulk(c) {
       <td>${r.email}</td>
       <td><span class="badge ${r.status}">${label(r.status)}</span></td>
       <td>${r.diagnosis}</td>
+      <td><button class="research-btn row" onclick="openResearch('${r.email.replace(/'/g,"\\'")}')">🔍</button></td>
     </tr>`).join('');
 
   document.getElementById('bulkResult').innerHTML = `
@@ -463,7 +526,7 @@ function renderBulk(c) {
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Email</th><th>Status</th><th>Diagnosis</th></tr></thead>
+        <thead><tr><th>Email</th><th>Status</th><th>Diagnosis</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -484,6 +547,44 @@ function doExport(f) {
   a.download = `emails_${f}.csv`;
   a.click();
 }
+
+async function openResearch(email) {
+  const m = document.getElementById('researchModal');
+  document.getElementById('researchEmail').textContent = email;
+  document.getElementById('researchBody').innerHTML =
+    `<div class="modal-loading"><span class="spin"></span><div style="margin-top:12px">Searching the web…</div></div>`;
+  m.classList.add('open');
+  try {
+    const r = await fetch(`/api/research?email=${encodeURIComponent(email)}`);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Research failed');
+    const sources = (d.sources || []).map(s => `
+      <a class="source" href="${s.url}" target="_blank" rel="noopener">
+        <div class="src-title">${escapeHtml(s.title || s.url)}</div>
+        <div class="src-url">${escapeHtml(s.url)}</div>
+        <div class="src-snippet">${escapeHtml((s.snippet || '').slice(0, 240))}${s.snippet && s.snippet.length > 240 ? '…' : ''}</div>
+      </a>`).join('');
+    document.getElementById('researchBody').innerHTML = `
+      ${d.summary ? `
+        <div class="modal-section-label">Summary</div>
+        <div class="modal-summary">${escapeHtml(d.summary)}</div>
+      ` : ''}
+      ${sources ? `
+        <div class="modal-section-label">Sources (${d.sources.length})</div>
+        ${sources}
+      ` : '<div class="modal-summary">No results found.</div>'}
+    `;
+  } catch (e) {
+    document.getElementById('researchBody').innerHTML = `<div class="err">${e.message}</div>`;
+  }
+}
+function closeResearch() {
+  document.getElementById('researchModal').classList.remove('open');
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeResearch(); });
 
 function switchTab(t) {
   document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', (i===0&&t==='single')||(i===1&&t==='bulk')));
