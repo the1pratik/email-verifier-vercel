@@ -142,27 +142,6 @@ input[type=text]:focus, textarea:focus { border-color: var(--lavender-ink); }
 input::placeholder, textarea::placeholder { color: var(--muted); }
 textarea { resize: none; height: 150px; line-height: 1.6; }
 
-.suggest {
-  margin-top: 12px; padding: 12px 16px;
-  background: var(--butter); color: var(--butter-ink);
-  border-radius: 12px; font-size: 0.9rem;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  animation: pop 0.25s ease;
-}
-.suggest .msg { flex: 1; }
-.suggest .msg b { font-weight: 600; }
-.suggest button {
-  background: var(--butter-ink); color: var(--butter);
-  border: none; border-radius: 8px; padding: 6px 12px;
-  font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
-  transition: opacity 0.15s;
-}
-.suggest button:hover { opacity: 0.85; }
-.suggest .dismiss {
-  background: transparent; color: var(--butter-ink);
-  padding: 4px 8px; opacity: 0.7;
-}
-.suggest .dismiss:hover { opacity: 1; }
 
 .btn {
   padding: 0 26px; height: 50px;
@@ -243,8 +222,6 @@ tbody tr td {
 }
 tbody tr td:first-child { border-radius: 12px 0 0 12px; }
 tbody tr td:last-child { border-radius: 0 12px 12px 0; }
-tbody tr.fixed td { background: var(--butter); color: var(--butter-ink); }
-.fix-tag { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--butter-ink); color: var(--butter); margin-left: 6px; }
 
 .export-row { padding: 20px 28px 28px; display: flex; gap: 10px; flex-wrap: wrap; }
 .exp-btn {
@@ -302,14 +279,12 @@ tbody tr.fixed td { background: var(--butter); color: var(--butter-ink); }
       <input type="text" id="singleInput" placeholder="name@company.com" onkeydown="if(event.key==='Enter') runSingle()">
       <button class="btn" id="singleBtn" onclick="runSingle()">Check</button>
     </div>
-    <div id="singleSuggest"></div>
     <div id="singleErr"></div>
   </div>
   <div id="singleResult"></div>
 
   <div id="bulkPanel" class="pad" style="display:none">
     <textarea id="bulkInput" placeholder="Paste emails — one per line or comma separated"></textarea>
-    <div id="bulkSuggest"></div>
     <div id="bulkProgress" style="display:none">
       <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
       <div class="prog-label" id="progLabel"></div>
@@ -350,69 +325,6 @@ function toggleTheme() {
   paintThemeBtn();
 }
 paintThemeBtn();
-
-/* ---------- Typo suggestions ---------- */
-const COMMON_DOMAINS = [
-  'gmail.com','googlemail.com','yahoo.com','yahoo.co.uk','yahoo.co.in','hotmail.com','hotmail.co.uk',
-  'outlook.com','outlook.in','live.com','msn.com','icloud.com','me.com','mac.com',
-  'proton.me','protonmail.com','aol.com','gmx.com','gmx.net','yandex.com','yandex.ru',
-  'zoho.com','fastmail.com','mail.com','mail.ru','tutanota.com'
-];
-const COMMON_TLDS = ['com','net','org','co','io','edu','gov','co.uk','co.in','ai','app','dev','me'];
-const TLD_TYPOS = { 'con':'com','vom':'com','xom':'com','cmo':'com','vcom':'com','comm':'com','cm':'com','om':'com',
-  'net.':'net','nett':'net','ner':'net','orgg':'org','rog':'org','ogr':'org' };
-
-function lev(a, b) {
-  if (a === b) return 0;
-  const m = a.length, n = b.length;
-  if (!m) return n; if (!n) return m;
-  const dp = Array.from({length:m+1}, (_,i)=>[i]);
-  for (let j=1;j<=n;j++) dp[0][j]=j;
-  for (let i=1;i<=m;i++) for (let j=1;j<=n;j++) {
-    dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1]
-      : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-  }
-  return dp[m][n];
-}
-
-function suggest(email) {
-  if (!email || !email.includes('@')) return null;
-  const [local, domain] = email.toLowerCase().split('@');
-  if (!domain) return null;
-
-  // Exact common domain — no suggestion
-  if (COMMON_DOMAINS.includes(domain)) return null;
-
-  // Try TLD typo fix first
-  const parts = domain.split('.');
-  if (parts.length >= 2) {
-    const tld = parts.slice(1).join('.');
-    if (TLD_TYPOS[tld]) {
-      const fixed = parts[0] + '.' + TLD_TYPOS[tld];
-      return `${local}@${fixed}`;
-    }
-    // Fuzzy TLD against common list
-    let bestTld = null, bestTldD = 99;
-    for (const t of COMMON_TLDS) {
-      const d = lev(tld, t);
-      if (d > 0 && d <= 1 && d < bestTldD) { bestTld = t; bestTldD = d; }
-    }
-    if (bestTld) {
-      const fixed = parts[0] + '.' + bestTld;
-      // If after fixing TLD it matches a common domain, prefer that
-      return `${local}@${fixed}`;
-    }
-  }
-
-  // Fuzzy whole-domain match against common providers
-  let best = null, bestD = 99;
-  for (const cd of COMMON_DOMAINS) {
-    const d = lev(domain, cd);
-    if (d > 0 && d <= 2 && d < bestD) { best = cd; bestD = d; }
-  }
-  if (best) return `${local}@${best}`;
-  return null;
-}
 
 /* ---------- API ---------- */
 const API = (email, type='single') => `/api/verify?email=${encodeURIComponent(email)}&type=${type}`;
@@ -477,31 +389,9 @@ function renderSingle(d) {
     </div>`;
 }
 
-let pendingSingle = null;
-
 async function runSingle() {
-  const inp = document.getElementById('singleInput');
-  const email = inp.value.trim().toLowerCase();
+  const email = document.getElementById('singleInput').value.trim().toLowerCase();
   if (!email) return;
-  const sg = document.getElementById('singleSuggest');
-
-  // If we haven't already prompted a suggestion for this exact value, check
-  if (pendingSingle !== email) {
-    const fix = suggest(email);
-    if (fix && fix !== email) {
-      pendingSingle = email;
-      sg.innerHTML = `
-        <div class="suggest">
-          <div class="msg">Did you mean <b>${fix}</b>?</div>
-          <button onclick="acceptSuggest('${fix.replace(/'/g, "\\'")}')">Use it</button>
-          <button class="dismiss" onclick="dismissSuggest()" title="Verify as typed">✕</button>
-        </div>`;
-      return;
-    }
-  }
-  sg.innerHTML = '';
-  pendingSingle = null;
-
   const btn = document.getElementById('singleBtn');
   document.getElementById('singleErr').innerHTML = '';
   document.getElementById('singleResult').innerHTML = '';
@@ -518,60 +408,13 @@ async function runSingle() {
   btn.textContent = 'Check';
 }
 
-function acceptSuggest(fix) {
-  document.getElementById('singleInput').value = fix;
-  document.getElementById('singleSuggest').innerHTML = '';
-  pendingSingle = null;
-  runSingle();
-}
-function dismissSuggest() {
-  document.getElementById('singleSuggest').innerHTML = '';
-  // Keep pendingSingle set so we don't re-prompt for the same value
-  runSingle();
-}
-
 function parseEmails(raw) {
   return [...new Set(raw.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e.includes('@')))];
 }
 
-let bulkFixMap = null; // original -> suggested
-let bulkPromptedFor = null;
-
 async function runBulk() {
-  const raw = document.getElementById('bulkInput').value;
-  let emails = parseEmails(raw).slice(0, 500);
+  const emails = parseEmails(document.getElementById('bulkInput').value).slice(0, 500);
   if (!emails.length) return;
-  const sg = document.getElementById('bulkSuggest');
-
-  // Compute suggestions
-  const fixes = {};
-  emails.forEach(e => { const f = suggest(e); if (f && f !== e) fixes[e] = f; });
-  const fixCount = Object.keys(fixes).length;
-
-  const sig = emails.join(',');
-  if (fixCount > 0 && bulkPromptedFor !== sig) {
-    bulkPromptedFor = sig;
-    bulkFixMap = fixes;
-    const sample = Object.entries(fixes).slice(0, 3)
-      .map(([o,f]) => `<b>${o}</b> → <b>${f}</b>`).join('<br>');
-    sg.innerHTML = `
-      <div class="suggest">
-        <div class="msg">Found ${fixCount} likely typo${fixCount>1?'s':''}:<br>${sample}${fixCount>3?`<br>+ ${fixCount-3} more`:''}</div>
-        <button onclick="acceptBulkFix()">Fix all & verify</button>
-        <button class="dismiss" onclick="skipBulkFix()" title="Verify as-is">✕</button>
-      </div>`;
-    return;
-  }
-
-  sg.innerHTML = '';
-  const fixApplied = bulkFixMap || {};
-  bulkFixMap = null;
-  bulkPromptedFor = null;
-
-  // Apply any accepted fixes
-  const finalEmails = emails.map(e => fixApplied[e] || e);
-  const fixedSet = new Set(Object.keys(fixApplied));
-
   const btn = document.getElementById('bulkBtn');
   const progWrap = document.getElementById('bulkProgress');
   const fill = document.getElementById('progFill');
@@ -583,19 +426,17 @@ async function runBulk() {
   bulkRows = [];
   const c = { valid:0, invalid:0, risky:0, catch_all:0 };
 
-  for (let i = 0; i < finalEmails.length; i++) {
-    const orig = emails[i];
-    const fe = finalEmails[i];
+  for (let i = 0; i < emails.length; i++) {
     try {
-      const d = await callAPI(fe);
+      const d = await callAPI(emails[i]);
       const s = norm(d.Status);
-      bulkRows.push({ email: fe, status: s, diagnosis: d.Diagnosis || '', wasFixed: fixedSet.has(orig), originalEmail: orig });
+      bulkRows.push({ email: emails[i], status: s, diagnosis: d.Diagnosis || '' });
       if (c[s] !== undefined) c[s]++; else c.risky++;
     } catch {
-      bulkRows.push({ email: fe, status: 'unknown', diagnosis: 'Error', wasFixed: fixedSet.has(orig), originalEmail: orig });
+      bulkRows.push({ email: emails[i], status: 'unknown', diagnosis: 'Error' });
     }
-    fill.style.width = `${Math.round((i+1)/finalEmails.length*100)}%`;
-    lbl.textContent = `${i+1} / ${finalEmails.length}`;
+    fill.style.width = `${Math.round((i+1)/emails.length*100)}%`;
+    lbl.textContent = `${i+1} / ${emails.length}`;
   }
 
   progWrap.style.display = 'none';
@@ -605,20 +446,10 @@ async function runBulk() {
   btn.textContent = 'Verify All';
 }
 
-function acceptBulkFix() {
-  document.getElementById('bulkSuggest').innerHTML = '';
-  runBulk();
-}
-function skipBulkFix() {
-  bulkFixMap = {};
-  document.getElementById('bulkSuggest').innerHTML = '';
-  runBulk();
-}
-
 function renderBulk(c) {
   const rows = bulkRows.map(r => `
-    <tr class="${r.wasFixed ? 'fixed' : ''}">
-      <td>${r.email}${r.wasFixed ? `<span class="fix-tag">fixed</span>` : ''}</td>
+    <tr>
+      <td>${r.email}</td>
       <td><span class="badge ${r.status}">${label(r.status)}</span></td>
       <td>${r.diagnosis}</td>
     </tr>`).join('');
@@ -662,15 +493,6 @@ function switchTab(t) {
   document.getElementById('bulkResult').style.display = t==='bulk' ? '' : 'none';
 }
 
-// Clear suggestion if user edits the input
-document.getElementById('singleInput').addEventListener('input', () => {
-  document.getElementById('singleSuggest').innerHTML = '';
-  pendingSingle = null;
-});
-document.getElementById('bulkInput').addEventListener('input', () => {
-  document.getElementById('bulkSuggest').innerHTML = '';
-  bulkFixMap = null; bulkPromptedFor = null;
-});
 </script>
 </body>
 </html>
