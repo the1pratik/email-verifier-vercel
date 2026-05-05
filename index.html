@@ -418,14 +418,20 @@ function norm(s) {
   return 'unknown';
 }
 function label(s) {
-  return { valid:'Valid ✓', invalid:'Invalid ✗', catch_all:'Catch-All', risky:'Risky ⚠', unknown:'Unknown' }[s] || s;
+  return {
+    valid:    '✓ VALID — SAFE TO SEND',
+    invalid:  '✗ INVALID — DO NOT SEND',
+    catch_all:'◐ CATCH-ALL — UNCONFIRMED',
+    risky:    '⚠ RISKY — SKIP / RETRY',
+    unknown:  '? UNKNOWN — NO DATA'
+  }[s] || s;
 }
 function bv(val, goodIfTrue) {
   const t = String(val).toLowerCase() === 'true';
   const l = t ? 'Yes' : 'No';
   if (goodIfTrue === undefined) return `<span class="val mute">${l}</span>`;
   const good = goodIfTrue ? t : !t;
-  return `<span class="val ${good ? 'good' : 'bad'}">${l}</span>`;
+  return `<span class="val ${good ? 'good' : 'bad'}">${l} ${good ? '✓' : '✗'}</span>`;
 }
 
 function renderSingle(d) {
@@ -519,10 +525,10 @@ function renderBulk(c) {
 
   document.getElementById('bulkResult').innerHTML = `
     <div class="summary">
-      <div class="sum-cell valid"><div class="sum-n">${c.valid}</div><div class="sum-lbl">Valid</div></div>
-      <div class="sum-cell invalid"><div class="sum-n">${c.invalid}</div><div class="sum-lbl">Invalid</div></div>
-      <div class="sum-cell risky"><div class="sum-n">${c.risky}</div><div class="sum-lbl">Risky</div></div>
-      <div class="sum-cell catchall"><div class="sum-n">${c.catch_all}</div><div class="sum-lbl">Catch-All</div></div>
+      <div class="sum-cell valid"><div class="sum-n">${c.valid}</div><div class="sum-lbl">✓ Valid</div></div>
+      <div class="sum-cell invalid"><div class="sum-n">${c.invalid}</div><div class="sum-lbl">✗ Invalid</div></div>
+      <div class="sum-cell risky"><div class="sum-n">${c.risky}</div><div class="sum-lbl">⚠ Risky</div></div>
+      <div class="sum-cell catchall"><div class="sum-n">${c.catch_all}</div><div class="sum-lbl">◐ Catch-All</div></div>
     </div>
     <div class="tbl-wrap">
       <table>
